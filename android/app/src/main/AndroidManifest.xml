@@ -17,20 +17,20 @@
         android:label="tilik_desa"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
-        <service
+        <!-- <service
             android:name="com.google.firebase.messaging.FirebaseMessagingService"
             android:exported="true">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT"/>
             </intent-filter>
-        </service>
-        <meta-data
+        </service> -->
+        <!-- <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
-            android:value="default_channel"/>
+            android:value="default_channel"/> -->
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="@string/google_maps_key"/>
+            android:value="AIzaSyDibqZy4BQxwm3oM1BS57VmEEhKH_Ug1fU"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"
