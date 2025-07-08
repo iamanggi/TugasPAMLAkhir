@@ -2,8 +2,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get/get.dart';
 import 'package:tilik_desa/core/core.dart';
+import 'package:tilik_desa/core/navigations/admin_botom_navigation.dart';
 import 'package:tilik_desa/data/model/request/auth/login_request_model.dart';
+import 'package:tilik_desa/presentation/Admin/widget/dashbord_admin_screen.dart';
+import 'package:tilik_desa/presentation/User/widget/dashboard_user.dart';
 import 'package:tilik_desa/presentation/auth/bloc/login/login_bloc.dart';
 import 'package:tilik_desa/presentation/auth/widget/register_screen.dart';
 
@@ -19,7 +23,6 @@ class _LoginScreenState extends State<LoginScreen> {
   late final TextEditingController passwordController;
   late final GlobalKey<FormState> _key;
   bool isShowPassword = false;
-  String selectedLanguage = 'ID'; // 'ID' atau 'EN'
 
   @override
   void initState() {
@@ -33,11 +36,8 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     emailController.dispose();
     passwordController.dispose();
-    _key.currentState?.dispose();
     super.dispose();
   }
-
-  bool get isEnglish => selectedLanguage == 'EN';
 
   @override
   Widget build(BuildContext context) {
@@ -48,25 +48,23 @@ class _LoginScreenState extends State<LoginScreen> {
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
-            child: CupertinoSlidingSegmentedControl<String>(
+            child: CupertinoSlidingSegmentedControl<Locale>(
               backgroundColor: Colors.grey.shade300,
               thumbColor: Colors.green,
-              groupValue: selectedLanguage,
-              children: const {
-                'ID': Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              groupValue: Get.locale,
+              children: {
+                const Locale('id', 'ID'): Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   child: Text('ID', style: TextStyle(color: Colors.white)),
                 ),
-                'EN': Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                const Locale('en', 'US'): Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   child: Text('EN', style: TextStyle(color: Colors.white)),
                 ),
               },
               onValueChanged: (value) {
                 if (value != null) {
-                  setState(() {
-                    selectedLanguage = value;
-                  });
+                  Get.updateLocale(value);
                 }
               },
             ),
@@ -90,40 +88,37 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SpaceHeight(20),
                 Text(
-                  isEnglish
-                      ? 'Welcome to TilikDesa'
-                      : 'Selamat datang di TilikDesa',
+                  'welcome'.tr,
                   style: TextStyle(
                     fontSize: MediaQuery.of(context).size.width * 0.06,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SpaceHeight(10),
-                Text(
-                  isEnglish
-                      ? 'TilikDesa: From Your Hands, For Village Progress!'
-                      : 'TilikDesa: Dari Genggaman, untuk Kemajuan Desa!',
-                  style: const TextStyle(fontSize: 16),
-                ),
+                Text('slogan'.tr, style: const TextStyle(fontSize: 16)),
                 const SpaceHeight(30),
+
+                // Email
                 CustomTextField(
-                  validator: isEnglish
-                      ? 'Email cannot be empty'
-                      : 'Email tidak boleh kosong',
+                  label: 'email'.tr,
                   controller: emailController,
-                  label: 'Email',
                   prefixIcon: const Padding(
                     padding: EdgeInsets.all(8.0),
                     child: Icon(Icons.email),
                   ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'email_required'.tr;
+                    }
+                    return null;
+                  },
                 ),
                 const SpaceHeight(25),
+
+                // Password
                 CustomTextField(
-                  validator: isEnglish
-                      ? 'Password cannot be empty'
-                      : 'Password tidak boleh kosong',
+                  label: 'password'.tr,
                   controller: passwordController,
-                  label: 'Password',
                   obscureText: !isShowPassword,
                   prefixIcon: const Padding(
                     padding: EdgeInsets.all(8.0),
@@ -136,31 +131,31 @@ class _LoginScreenState extends State<LoginScreen> {
                       });
                     },
                     icon: Icon(
-                      isShowPassword
-                          ? Icons.visibility
-                          : Icons.visibility_off,
+                      isShowPassword ? Icons.visibility : Icons.visibility_off,
                       color: AppColors.grey,
                     ),
                   ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'password_required'.tr;
+                    }
+                    return null;
+                  },
                 ),
                 const SpaceHeight(30),
+
+                // Login Button
                 BlocConsumer<LoginBloc, LoginState>(
                   listener: (context, state) {
-                    if (state is LoginFailure) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(state.error)),
-                      );
-                    } else if (state is LoginSuccess) {
-                      final role = state.responseModel.data?.tokenType?.toLowerCase();
-                      if (role == 'admin') {
-                        // Navigasi admin
-                      } else if (role == 'buyer') {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(state.responseModel.message ?? "")),
-                        );
+                    if (state is LoginSuccess) {
+                      final role = state.responseModel.data?.user?.role?.toLowerCase();
+                      if (role == 'masyarakat') {
+                        context.pushReplacement(const DashboardUserScreen());
+                      } else if (role == 'admin') {
+                        context.pushReplacement(const AdminBottomNavigation());
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Role tidak dikenali')),
+                          SnackBar(content: Text('unrecognized_role'.tr)),
                         );
                       }
                     }
@@ -176,38 +171,32 @@ class _LoginScreenState extends State<LoginScreen> {
                                   password: passwordController.text,
                                 );
                                 context.read<LoginBloc>().add(
-                                  LoginRequested(requestModel: request),
-                                );
+                                      LoginRequested(requestModel: request),
+                                    );
                               }
                             },
-                      label: state is LoginLoading
-                          ? 'Loading...'
-                          : (isEnglish ? 'Login' : 'Masuk'),
+                      label: state is LoginLoading ? 'loading'.tr : 'login'.tr,
                     );
                   },
                 ),
                 const SpaceHeight(20),
+
+                // Register Link
                 Center(
                   child: Text.rich(
                     TextSpan(
-                      text: isEnglish
-                          ? "Don't have an account? "
-                          : 'Belum memiliki akun? ',
+                      text: 'no_account'.tr,
                       style: TextStyle(
                         color: AppColors.grey,
                         fontSize: MediaQuery.of(context).size.width * 0.03,
                       ),
                       children: [
                         TextSpan(
-                          text: isEnglish
-                              ? "Register here!"
-                              : "Daftar disini!",
+                          text: 'register_here'.tr,
                           style: TextStyle(color: AppColors.primary),
                           recognizer: TapGestureRecognizer()
                             ..onTap = () {
-                              context.push(
-                                RegisterScreen(selectedLanguage: selectedLanguage),
-                              );
+                              context.push(const RegisterScreen());
                             },
                         ),
                       ],

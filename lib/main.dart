@@ -1,4 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:get/get_navigation/src/root/get_material_app.dart';
+import 'package:http/http.dart' as http;
+import 'package:tilik_desa/core/bahasa/translation.dart';
+import 'package:tilik_desa/data/repository/Admin/categori_admin_respositori.dart';
+import 'package:tilik_desa/data/repository/Admin/dashboard_admin_repository.dart';
+import 'package:tilik_desa/data/repository/Admin/pemeliharaan_admin_repository.dart';
+import 'package:tilik_desa/data/repository/Auth/auth_repository.dart';
+import 'package:tilik_desa/data/repository/User/dashboard_user_repository.dart';
+import 'package:tilik_desa/data/repository/User/profil_update_user_repository.dart';
+import 'package:tilik_desa/data/repository/User/report_user_repository.dart';
+import 'package:tilik_desa/presentation/Admin/bloc/categori_admin/categori_bloc.dart';
+import 'package:tilik_desa/presentation/Admin/bloc/dashboard_admin/dashboard_admin_bloc.dart';
+import 'package:tilik_desa/presentation/Admin/bloc/pemeliharaan_admin/pemeliharaan_admin_bloc.dart';
+import 'package:tilik_desa/presentation/User/bloc/dashboard_user/dashboard_user_bloc.dart';
+import 'package:tilik_desa/presentation/User/bloc/report_user/report_user_bloc.dart';
+import 'package:tilik_desa/presentation/User/bloc/update_profil_user/update_profil_user_bloc.dart';
+import 'package:tilik_desa/presentation/auth/bloc/login/login_bloc.dart';
+import 'package:tilik_desa/presentation/auth/bloc/register/register_bloc.dart';
+import 'package:tilik_desa/presentation/auth/widget/login_screen.dart';
+import 'package:tilik_desa/services/services_http_client.dart';
 
 void main() {
   runApp(const MyApp());
@@ -7,30 +29,75 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create:
+              (context) => LoginBloc(
+                authRepository: AuthRepository(ServiceHttpClient()),
+              ),
+        ),
+        BlocProvider(
+          create:
+              (context) => RegisterBloc(
+                authRepository: AuthRepository(ServiceHttpClient()),
+              ),
+        ),
+        BlocProvider(
+          create:
+              (context) => DashboardUserBloc(
+                dashboardUserRepository: DashboardUserRepository(
+                  ServiceHttpClient(),
+                ),
+              ),
+        ),
+        BlocProvider(
+          create:
+              (context) => DashboardAdminBloc(
+                repository: DashboardAdminRepository(ServiceHttpClient()),
+              ),
+        ),
+        BlocProvider(
+          create:
+              (context) => ReportUserBloc(
+                reportRepository: ReportRepository(ServiceHttpClient()),
+              ),
+        ),
+
+        BlocProvider(
+          create:
+              (context) => UpdateProfilUserBloc(
+                UserProfileRepository(ServiceHttpClient()),
+              ),
+        ),
+        BlocProvider(
+          create:
+              (context) => PemeliharaanAdminBloc(
+                repository: PemeliharaanRepository(ServiceHttpClient()),
+              ),
+        ),
+        BlocProvider(
+          create: (context) => CategoriBloc(
+            CategoryRepository(ServiceHttpClient()),
+          ),
+        ),
+      ],
+      child: GetMaterialApp(
+        title: 'TilikDesa',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        ),
+        translations: AppTranslations(), // ⬅️ tambahkan ini
+        locale: const Locale('id', 'ID'), // bahasa default
+        fallbackLocale: const Locale(
+          'en',
+          'US',
+        ), // fallback jika id tidak tersedia
+        home: const LoginScreen(),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }

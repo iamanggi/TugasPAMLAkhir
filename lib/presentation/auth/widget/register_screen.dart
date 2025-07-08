@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:step_progress_indicator/step_progress_indicator.dart';
 
 class RegisterScreen extends StatefulWidget {
-  final String selectedLanguage;
-
-  const RegisterScreen({super.key, required this.selectedLanguage});
+  const RegisterScreen({super.key});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -17,8 +16,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
-
-  bool get isEnglish => widget.selectedLanguage == 'EN';
 
   bool get isInputNotEmpty {
     switch (currentStep) {
@@ -43,11 +40,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       setState(() => currentStep++);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(isEnglish
-              ? 'Registration successful!'
-              : 'Registrasi berhasil!'),
-        ),
+        SnackBar(content: Text('registration_success'.tr)),
       );
     }
   }
@@ -56,34 +49,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
     switch (currentStep) {
       case 0:
         return buildInputSection(
-          title: isEnglish ? "What's your name?" : "Siapa nama kamu?",
-          hint: isEnglish ? "Full name" : "Nama lengkap",
+          title: 'step1_title'.tr,
+          hint: 'step1_hint'.tr,
           controller: nameController,
         );
       case 1:
         return buildInputSection(
-          title: isEnglish ? "Choose a unique username" : "Pilih username unik",
-          hint: "Username",
+          title: 'step2_title'.tr,
+          hint: 'step2_hint'.tr,
           controller: usernameController,
         );
       case 2:
         return buildInputSection(
-          title: isEnglish ? "Enter your email" : "Masukkan email kamu",
-          hint: "Email",
+          title: 'step3_title'.tr,
+          hint: 'step3_hint'.tr,
           controller: emailController,
           keyboardType: TextInputType.emailAddress,
         );
       case 3:
         return buildInputSection(
-          title: isEnglish ? "Create a secure password" : "Buat password aman",
-          hint: isEnglish ? "Password" : "Kata sandi",
+          title: 'step4_title'.tr,
+          hint: 'step4_hint'.tr,
           controller: passwordController,
           obscure: true,
         );
       case 4:
         return buildInputSection(
-          title: isEnglish ? "Confirm your password" : "Konfirmasi password",
-          hint: isEnglish ? "Repeat password" : "Ulangi kata sandi",
+          title: 'step5_title'.tr,
+          hint: 'step5_hint'.tr,
           controller: confirmPasswordController,
           obscure: true,
         );
@@ -129,7 +122,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
-              isEnglish ? 'Passwords do not match' : 'Password tidak cocok',
+              'password_not_match'.tr,
               style: const TextStyle(color: Colors.red),
             ),
           ),
@@ -139,9 +132,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    List<String> stepLabels = isEnglish
-        ? ['Name', 'Username', 'Email', 'Password', 'Confirm']
-        : ['Nama', 'Username', 'Email', 'Password', 'Konfirmasi'];
+    List<String> stepLabels = [
+      'step1_title'.tr,
+      'step2_title'.tr,
+      'step3_title'.tr,
+      'step4_title'.tr,
+      'step5_title'.tr,
+    ];
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -163,7 +160,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                "${isEnglish ? 'Step' : 'Langkah'} ${currentStep + 1} ${isEnglish ? 'of' : 'dari'} 5: ${stepLabels[currentStep]}",
+                '${'step'.tr} ${currentStep + 1} ${'of'.tr} 5: ${stepLabels[currentStep]}',
                 style: const TextStyle(fontSize: 14, color: Colors.black54),
               ),
               const SizedBox(height: 32),
@@ -184,9 +181,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     disabledForegroundColor: Colors.white.withOpacity(0.7),
                   ),
                   child: Text(
-                    currentStep < 4
-                        ? (isEnglish ? "Next" : "Lanjutkan")
-                        : (isEnglish ? "Finish" : "Selesai"),
+                    currentStep < 4 ? 'next'.tr : 'finish'.tr,
                     style: const TextStyle(fontSize: 16),
                   ),
                 ),

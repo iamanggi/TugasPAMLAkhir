@@ -22,6 +22,9 @@ class AuthRepository {
         "login",
         requestModel.toMap(),
       );
+      log("Status Code: ${response.statusCode}");
+      log("Response Body: ${response.body}");
+  
       final jsonResponse = json.decode(response.body);
       if (response.statusCode == 200) {
         final loginResponse = RegisterResponseModel.fromMap(jsonResponse);
@@ -32,6 +35,10 @@ class AuthRepository {
         await secureStorage.write(
           key: "userRole",
           value: loginResponse.data!.tokenType,
+        );
+        await secureStorage.write(
+          key: "userName",
+          value: loginResponse.data!.user?.nama ?? "Pengguna",
         );
         log("Login successful: ${loginResponse.message}");
         return Right(loginResponse);
