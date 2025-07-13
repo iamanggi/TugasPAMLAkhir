@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:tilik_desa/presentation/Admin/widget/categori_page_screen.dart';
 import 'package:tilik_desa/presentation/Admin/widget/dashbord_admin_screen.dart';
-import 'package:tilik_desa/presentation/Admin/widget/kelolaLaporanScreen.dart';
 import 'package:tilik_desa/presentation/Admin/widget/pemeliharaan_admin_screen.dart';
 import 'package:tilik_desa/presentation/Admin/widget/pengaturan_admin.dart';
-import 'package:tilik_desa/presentation/Admin/widget/peta_laporan.dart';
+import 'package:tilik_desa/presentation/Admin/widget/riwayat_report_admin_screen.dart';
 
 class AdminBottomNavigation extends StatefulWidget {
   const AdminBottomNavigation({super.key});
@@ -18,7 +17,7 @@ class _AdminBottomNavigationState extends State<AdminBottomNavigation> {
 
   final List<Widget> _screens = const [
     DashboardAdminScreen(),
-    Kelolalaporanscreen(),
+    AdminReportListPage(),
     CategoryPage(),
     PemeliharaanAdminScreen(),
     AdminSettingsScreen()
