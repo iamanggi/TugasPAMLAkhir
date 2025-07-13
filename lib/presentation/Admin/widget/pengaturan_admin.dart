@@ -15,11 +15,16 @@ class AdminSettingsScreen extends StatefulWidget {
 
 class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   bool isBahasaIndonesia = true;
+  bool isRefreshing = false;
 
   @override
   void initState() {
     super.initState();
     _loadLanguagePreference();
+    _loadDashboardData();
+  }
+
+  Future<void> _loadDashboardData() async {
     context.read<DashboardAdminBloc>().add(LoadDashboardAdmin());
   }
 
@@ -35,6 +40,22 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     await prefs.setBool('bahasa', value);
     setState(() => isBahasaIndonesia = value);
     Get.updateLocale(value ? const Locale('id', 'ID') : const Locale('en', 'US'));
+  }
+
+  Future<void> _refreshProfile() async {
+    if (isRefreshing) return;
+    
+    setState(() => isRefreshing = true);
+    
+    try {
+      await Future.delayed(const Duration(milliseconds: 500));
+      context.read<DashboardAdminBloc>().add(LoadDashboardAdmin());
+      await Future.delayed(const Duration(milliseconds: 300));
+    } finally {
+      if (mounted) {
+        setState(() => isRefreshing = false);
+      }
+    }
   }
 
   Future<void> _logout() async {
@@ -66,25 +87,39 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: isRefreshing 
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.refresh),
+            onPressed: isRefreshing ? null : _refreshProfile,
+          ),
+        ],
       ),
       body: BlocBuilder<DashboardAdminBloc, DashboardAdminState>(
         builder: (context, state) {
           dynamic userData;
-          bool isLoading = true;
+          String? photoUrl;
+          bool isLoading = state is! DashboardAdminLoaded;
 
           if (state is DashboardAdminLoaded) {
             userData = state.dashboard.data?.user;
-            isLoading = false;
+            final photoPath = userData?.photo;
+            
+            if (photoPath != null && photoPath.isNotEmpty) {
+              photoUrl = 'http://192.168.0.111:8888/Storage/$photoPath?v=${DateTime.now().millisecondsSinceEpoch}';
+            }
           }
 
           final displayName = userData?.nama ?? 'admin'.tr;
           final initials = _getInitials(displayName);
-          final photoUrl = userData?.photo;
 
           return RefreshIndicator(
-            onRefresh: () async {
-              context.read<DashboardAdminBloc>().add(LoadDashboardAdmin());
-            },
+            onRefresh: _refreshProfile,
             child: ListView(
               padding: const EdgeInsets.all(20),
               children: [
@@ -101,20 +136,25 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     );
   }
 
-  Widget _buildProfileCard(String displayName, String initials, String? photoUrl, bool isLoading) {
+  Widget _buildProfileCard(
+    String displayName,
+    String initials,
+    String? photoUrl,
+    bool isLoading,
+  ) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
         onTap: () async {
           final result = await Get.to(() => const UpdateProfilAdminScreen());
           if (result == true) {
-            context.read<DashboardAdminBloc>().add(LoadDashboardAdmin());
+            await _refreshProfile();
           }
         },
         leading: CircleAvatar(
           radius: 30,
           backgroundColor: Colors.blue.shade100,
-          child: isLoading
+          child: isLoading || isRefreshing
               ? const CircularProgressIndicator(strokeWidth: 2)
               : (photoUrl != null && photoUrl.isNotEmpty)
                   ? ClipOval(
@@ -123,16 +163,23 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                         width: 60,
                         height: 60,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Center(
-                          child: Text(
-                            initials,
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue.shade700,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return const CircularProgressIndicator(strokeWidth: 2);
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          print('Error loading image: $error');
+                          return Center(
+                            child: Text(
+                              initials,
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue.shade700,
+                              ),
                             ),
-                          ),
-                        ),
+                          );
+                        },
                       ),
                     )
                   : Text(
