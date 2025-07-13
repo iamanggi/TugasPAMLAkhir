@@ -1,30 +1,34 @@
-import 'dart:convert';
-
 class CategoryRequestModel {
   final String name;
-  final String slug;
-  final String description;
-  final String icon;
-  final String color;
-  final bool isActive;
+  final String? description;
+  final bool? isActive;
 
   CategoryRequestModel({
     required this.name,
-    required this.slug,
-    required this.description,
-    required this.icon,
-    required this.color,
-    required this.isActive,
+    this.description,
+    this.isActive,
   });
 
-  String toJson() => json.encode(toMap());
+  Map<String, dynamic> toMap() {
+    final Map<String, dynamic> data = {
+      'name': name,
+    };
+    if (description != null && description!.isNotEmpty) {
+      data['description'] = description;
+    }
+    
+    if (isActive != null) {
+      data['is_active'] = isActive;
+    }
 
-  Map<String, dynamic> toMap() => {
-        "name": name,
-        "slug": slug,
-        "description": description,
-        "icon": icon,
-        "color": color,
-        "is_active": isActive,
-      };
+    return data;
+  }
+
+  factory CategoryRequestModel.fromMap(Map<String, dynamic> map) {
+    return CategoryRequestModel(
+      name: map['name'] ?? '',
+      description: map['description'],
+      isActive: map['is_active'],
+    );
+  }
 }
