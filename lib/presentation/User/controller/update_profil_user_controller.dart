@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -28,10 +27,25 @@ class UpdateProfilUserController extends GetxController {
   final ImagePicker _picker = ImagePicker();
 
   final _repo = UserProfileRepository(ServiceHttpClient());
-  
-  // Data profil user yang sedang login
   UserProfileData? currentProfile;
 
+  @override
+  void onInit() {
+    super.onInit();
+    loadProfile(); // Load saat awal
+  }
+
+  @override
+  void onClose() {
+    namaController.dispose();
+    phoneController.dispose();
+    addressController.dispose();
+    villageController.dispose();
+    subDistrictController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
+    super.onClose();
+  }
   void pickImage() async {
     try {
       final picked = await _picker.pickImage(
@@ -53,14 +67,12 @@ class UpdateProfilUserController extends GetxController {
       );
     }
   }
-
-  /// Ambil data profil dari server
   Future<void> loadProfile() async {
     try {
       isLoadingProfile.value = true;
-      
+
       final result = await _repo.getMyProfile();
-      
+
       result.fold(
         (error) {
           Get.snackbar(
@@ -77,7 +89,9 @@ class UpdateProfilUserController extends GetxController {
           } else {
             Get.snackbar(
               'Error',
-              response.message.isNotEmpty ? response.message : 'Gagal memuat data profil',
+              response.message.isNotEmpty
+                  ? response.message
+                  : 'Gagal memuat data profil',
               backgroundColor: Colors.red,
               colorText: Colors.white,
             );
@@ -95,8 +109,6 @@ class UpdateProfilUserController extends GetxController {
       isLoadingProfile.value = false;
     }
   }
-
-  /// Isi form dengan data profil yang sudah ada
   void _populateFormWithProfileData() {
     if (currentProfile != null) {
       namaController.text = currentProfile!.nama;
@@ -104,22 +116,17 @@ class UpdateProfilUserController extends GetxController {
       addressController.text = currentProfile!.address ?? '';
       villageController.text = currentProfile!.village ?? '';
       subDistrictController.text = currentProfile!.subDistrict ?? '';
-      
-      // Reset password fields
       passwordController.clear();
       confirmPasswordController.clear();
-      
+      selectedImage = null;
       update();
     }
   }
-
   void updateProfile() async {
     if (!formKey.currentState!.validate()) return;
 
     final password = passwordController.text.trim();
     final confirmPassword = confirmPasswordController.text.trim();
-
-    // Validasi password jika diisi
     if (password.isNotEmpty && password != confirmPassword) {
       Get.snackbar(
         'Error',
@@ -129,8 +136,6 @@ class UpdateProfilUserController extends GetxController {
       );
       return;
     }
-
-    // Validasi minimal ada perubahan
     if (_isNoChange() && selectedImage == null) {
       Get.snackbar(
         'Info',
@@ -149,7 +154,7 @@ class UpdateProfilUserController extends GetxController {
       subDistrict: subDistrictController.text.trim(),
       password: password.isNotEmpty ? password : null,
       passwordConfirmation: password.isNotEmpty ? confirmPassword : null,
-      photo: selectedImage,
+      photoFile: selectedImage,
     );
 
     isLoading.value = true;
@@ -158,35 +163,36 @@ class UpdateProfilUserController extends GetxController {
       final result = await _repo.updateMyProfile(request);
 
       result.fold(
-        (error) => Get.snackbar(
-          'Gagal',
-          error,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        ),
+        (error) {
+          Get.snackbar(
+            'Gagal',
+            error,
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+          );
+        },
         (response) {
           if (response.success) {
-            // Update current profile dengan data baru
-            if (response.data != null) {
-              currentProfile = response.data;
-            }
-            
-            // Reset password fields setelah berhasil
+            currentProfile = response.data;
             passwordController.clear();
             confirmPasswordController.clear();
             selectedImage = null;
-            
-            Get.back(result: true);
+
+            Get.back(result: true); // beri tahu halaman sebelumnya
             Get.snackbar(
               'Berhasil',
-              response.message.isNotEmpty ? response.message : 'Profil berhasil diperbarui',
+              response.message.isNotEmpty
+                  ? response.message
+                  : 'Profil berhasil diperbarui',
               backgroundColor: Colors.green,
               colorText: Colors.white,
             );
           } else {
             Get.snackbar(
               'Gagal',
-              response.message.isNotEmpty ? response.message : 'Gagal memperbarui profil',
+              response.message.isNotEmpty
+                  ? response.message
+                  : 'Gagal memperbarui profil',
               backgroundColor: Colors.red,
               colorText: Colors.white,
             );
@@ -204,39 +210,17 @@ class UpdateProfilUserController extends GetxController {
       isLoading.value = false;
     }
   }
-
-  /// Cek apakah tidak ada perubahan data
   bool _isNoChange() {
     if (currentProfile == null) return false;
-    
-    return namaController.text.trim() == currentProfile!.nama &&
-           phoneController.text.trim() == (currentProfile!.phone ?? '') &&
-           addressController.text.trim() == (currentProfile!.address ?? '') &&
-           villageController.text.trim() == (currentProfile!.village ?? '') &&
-           subDistrictController.text.trim() == (currentProfile!.subDistrict ?? '') &&
-           passwordController.text.isEmpty;
-  }
 
-  /// Refresh data profil
+    return namaController.text.trim() == currentProfile!.nama &&
+        phoneController.text.trim() == (currentProfile!.phone ?? '') &&
+        addressController.text.trim() == (currentProfile!.address ?? '') &&
+        villageController.text.trim() == (currentProfile!.village ?? '') &&
+        subDistrictController.text.trim() == (currentProfile!.subDistrict ?? '') &&
+        passwordController.text.isEmpty;
+  }
   void refreshProfile() {
     loadProfile();
-  }
-
-  @override
-  void onInit() {
-    super.onInit();
-    loadProfile(); // Load data profil saat controller diinisialisasi
-  }
-
-  @override
-  void onClose() {
-    namaController.dispose();
-    phoneController.dispose();
-    addressController.dispose();
-    villageController.dispose();
-    subDistrictController.dispose();
-    passwordController.dispose();
-    confirmPasswordController.dispose();
-    super.onClose();
   }
 }
