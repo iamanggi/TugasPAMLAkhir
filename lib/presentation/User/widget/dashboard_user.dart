@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
-import 'package:tilik_desa/core/navigations/user_botom_navigation.dart';
 import 'package:tilik_desa/presentation/User/bloc/dashboard_user/dashboard_user_bloc.dart';
-import 'package:tilik_desa/presentation/User/widget/pengaturan_user.dart';
-import 'package:tilik_desa/presentation/User/widget/report_user.dart';
 
 class DashboardUserScreen extends StatefulWidget {
   const DashboardUserScreen({Key? key}) : super(key: key);
@@ -55,16 +52,24 @@ class _DashboardUserScreenState extends State<DashboardUserScreen> {
             padding: const EdgeInsets.only(right: 12.0),
             child: BlocBuilder<DashboardUserBloc, DashboardUserState>(
               builder: (context, state) {
+                String? fullPhotoUrl;
+
                 if (state is DashboardUserLoaded) {
-                  final photoUrl = state.dashboard.data?.user?.photo;
-                  if (photoUrl != null && photoUrl.isNotEmpty) {
-                    return CircleAvatar(
-                      backgroundImage: NetworkImage(photoUrl),
-                      child: null,
-                    );
+                  final photoPath = state.dashboard.data?.user?.photo;
+
+                  if (photoPath != null && photoPath.isNotEmpty) {
+                    fullPhotoUrl =
+                        'http://192.168.0.111:8888/storage/$photoPath';
                   }
                 }
-                return const CircleAvatar(child: Icon(Icons.person));
+
+                if (fullPhotoUrl != null) {
+                  return CircleAvatar(
+                    backgroundImage: NetworkImage(fullPhotoUrl),
+                  );
+                } else {
+                  return const CircleAvatar(child: Icon(Icons.person));
+                }
               },
             ),
           ),
@@ -72,108 +77,88 @@ class _DashboardUserScreenState extends State<DashboardUserScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
       ),
-      body: BlocBuilder<DashboardUserBloc, DashboardUserState>(
-        builder: (context, state) {
-          if (state is DashboardUserLoading) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const CircularProgressIndicator(),
-                  const SizedBox(height: 16),
-                  Text("loading_dashboard".tr),
-                ],
-              ),
-            );
-          } else if (state is DashboardUserLoaded) {
-            final dashboard = state.dashboard.data;
-            final stats = dashboard?.stats;
-            final pemeliharaan = dashboard?.pemeliharaan;
+      body: _buildDashboardContent(),
+    );
+  }
 
-            return RefreshIndicator(
-              onRefresh: () async {
-                context.read<DashboardUserBloc>().add(LoadDashboardUser());
-              },
-              child: ListView(
-                padding: const EdgeInsets.all(16.0),
-                children: [
-                  _buildSearchBar(),
-                  const SizedBox(height: 16),
-                  _buildStatsCard(stats),
-                  const SizedBox(height: 16),
-                  if (pemeliharaan != null && pemeliharaan.isNotEmpty)
-                    _buildPemeliharaanSection(pemeliharaan),
-                ],
-              ),
-            );
-          } else if (state is DashboardUserError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                  const SizedBox(height: 16),
-                  Text(
-                    "dashboard_failed".tr,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+  Widget _buildDashboardContent() {
+    return BlocBuilder<DashboardUserBloc, DashboardUserState>(
+      builder: (context, state) {
+        if (state is DashboardUserLoading) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text("loading_dashboard".tr),
+              ],
+            ),
+          );
+        } else if (state is DashboardUserLoaded) {
+          final dashboard = state.dashboard.data;
+          final stats = dashboard?.stats;
+          final pemeliharaan = dashboard?.pemeliharaan;
+
+          return RefreshIndicator(
+            onRefresh: () async {
+              context.read<DashboardUserBloc>().add(LoadDashboardUser());
+            },
+            child: ListView(
+              padding: const EdgeInsets.all(16.0),
+              children: [
+                _buildSearchBar(),
+                const SizedBox(height: 16),
+                _buildStatsCard(stats),
+                const SizedBox(height: 16),
+                if (pemeliharaan != null && pemeliharaan.isNotEmpty)
+                  _buildPemeliharaanSection(pemeliharaan),
+              ],
+            ),
+          );
+        } else if (state is DashboardUserError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                const SizedBox(height: 16),
+                Text(
+                  "dashboard_failed".tr,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    state.message,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.black54),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      context.read<DashboardUserBloc>().add(LoadDashboardUser());
-                    },
-                    child: Text("try_again".tr),
-                  ),
-                ],
-              ),
-            );
-          } else {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const CircularProgressIndicator(),
-                  const SizedBox(height: 16),
-                  Text("loading".tr),
-                ],
-              ),
-            );
-          }
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(context, MaterialPageRoute(builder: (context) =>  CameraScreen()));
-        },
-        child: const Icon(Icons.add),
-        tooltip: "new_report".tr,
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: UserBottomNavBar(
-        currentIndex: 0,
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              break;
-            case 1:
-              Navigator.push(context, MaterialPageRoute(builder: (context) =>  CameraScreen()));
-              break;
-            case 2:
-              break;
-            case 3:
-              break;
-            case 4:
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsScreen()));
-              break;
-          }
-        },
-      ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  state.message,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.black54),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    context.read<DashboardUserBloc>().add(LoadDashboardUser());
+                  },
+                  child: Text("try_again".tr),
+                ),
+              ],
+            ),
+          );
+        } else {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text("loading".tr),
+              ],
+            ),
+          );
+        }
+      },
     );
   }
 
@@ -249,7 +234,10 @@ class _DashboardUserScreenState extends State<DashboardUserScreen> {
                 const SizedBox(width: 8),
                 Text(
                   "your_stats".tr,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
@@ -286,7 +274,11 @@ class _DashboardUserScreenState extends State<DashboardUserScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Icon(item["icon"] as IconData, color: item["color"] as Color, size: 24),
+                      Icon(
+                        item["icon"] as IconData,
+                        color: item["color"] as Color,
+                        size: 24,
+                      ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -301,7 +293,10 @@ class _DashboardUserScreenState extends State<DashboardUserScreen> {
                           const SizedBox(height: 4),
                           Text(
                             item["label"].toString(),
-                            style: const TextStyle(fontSize: 12, color: Colors.black54),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.black54,
+                            ),
                           ),
                         ],
                       ),
@@ -331,7 +326,9 @@ class _DashboardUserScreenState extends State<DashboardUserScreen> {
           ],
         ),
         const SizedBox(height: 12),
-        ...pemeliharaanList.map((pemeliharaan) => _buildPemeliharaanCard(pemeliharaan)).toList(),
+        ...pemeliharaanList
+            .map((pemeliharaan) => _buildPemeliharaanCard(pemeliharaan))
+            .toList(),
       ],
     );
   }
@@ -363,7 +360,11 @@ class _DashboardUserScreenState extends State<DashboardUserScreen> {
                       color: Colors.orange.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 20),
+                    child: const Icon(
+                      Icons.warning_amber_rounded,
+                      color: Colors.orange,
+                      size: 20,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -372,12 +373,18 @@ class _DashboardUserScreenState extends State<DashboardUserScreen> {
                       children: [
                         Text(
                           pemeliharaan.namaFasilitas ?? "facility".tr,
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         if (pemeliharaan.tglPemeliharaan != null)
                           Text(
                             "${'date'.tr}: ${pemeliharaan.tglPemeliharaan}",
-                            style: const TextStyle(fontSize: 12, color: Colors.black54),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.black54,
+                            ),
                           ),
                       ],
                     ),
@@ -393,7 +400,10 @@ class _DashboardUserScreenState extends State<DashboardUserScreen> {
                     color: Colors.white.withOpacity(0.7),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(pemeliharaan.deskripsi!, style: const TextStyle(fontSize: 14)),
+                  child: Text(
+                    pemeliharaan.deskripsi!,
+                    style: const TextStyle(fontSize: 14),
+                  ),
                 ),
               ],
               if (pemeliharaan.catatan != null) ...[
