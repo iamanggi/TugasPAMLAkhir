@@ -38,10 +38,8 @@ class ReportData {
   final String title;
   final String description;
   final String status;
-  final String? photoUrl;
-  final String? village;
-  final String? district;
-  final String? fullAddress;
+  final List<String>? photos;
+  final String? address;
   final double? latitude;
   final double? longitude;
   final String? locationDetail;
@@ -60,10 +58,8 @@ class ReportData {
     required this.title,
     required this.description,
     required this.status,
-    this.photoUrl,
-    this.village,
-    this.district,
-    this.fullAddress,
+    this.photos,
+    this.address,
     this.latitude,
     this.longitude,
     this.locationDetail,
@@ -84,31 +80,30 @@ class ReportData {
       title: map['title'] ?? '',
       description: map['description'] ?? '',
       status: map['status'] ?? 'baru',
-      photoUrl: map['photo_url'],
-      village: map['village'],
-      district: map['district'],
-      fullAddress: map['full_address'],
-      latitude: map['latitude']?.toDouble(),
-      longitude: map['longitude']?.toDouble(),
+      photos: map['photos'] != null ? List<String>.from(map['photos']) : null,
+      address: map['address'],
+      latitude: map['latitude'] != null
+          ? double.tryParse(map['latitude'].toString())
+          : null,
+      longitude: map['longitude'] != null
+          ? double.tryParse(map['longitude'].toString())
+          : null,
       locationDetail: map['location_detail'],
       isUrgent: map['is_urgent'] ?? false,
       isVerified: map['is_verified'] ?? false,
       createdAt: DateTime.tryParse(map['created_at'] ?? '') ?? DateTime.now(),
-      verifiedAt: map['verified_at'] != null 
-          ? DateTime.tryParse(map['verified_at']) 
+      verifiedAt: map['verified_at'] != null
+          ? DateTime.tryParse(map['verified_at'])
           : null,
-      processedAt: map['processed_at'] != null 
-          ? DateTime.tryParse(map['processed_at']) 
+      processedAt: map['processed_at'] != null
+          ? DateTime.tryParse(map['processed_at'])
           : null,
-      completedAt: map['completed_at'] != null 
-          ? DateTime.tryParse(map['completed_at']) 
+      completedAt: map['completed_at'] != null
+          ? DateTime.tryParse(map['completed_at'])
           : null,
-      category: map['category'] != null 
-          ? CategoryData.fromMap(map['category']) 
-          : null,
-      user: map['user'] != null 
-          ? UserData.fromMap(map['user']) 
-          : null,
+      category:
+          map['category'] != null ? CategoryData.fromMap(map['category']) : null,
+      user: map['user'] != null ? UserData.fromMap(map['user']) : null,
     );
   }
 
@@ -119,10 +114,8 @@ class ReportData {
       'title': title,
       'description': description,
       'status': status,
-      'photo_url': photoUrl,
-      'village': village,
-      'district': district,
-      'full_address': fullAddress,
+      'photos': photos,
+      'address': address,
       'latitude': latitude,
       'longitude': longitude,
       'location_detail': locationDetail,
@@ -144,6 +137,7 @@ class CategoryData {
   final String? description;
   final String? icon;
   final String? color;
+  final bool? isActive; // Added isActive property
 
   CategoryData({
     required this.id,
@@ -151,6 +145,7 @@ class CategoryData {
     this.description,
     this.icon,
     this.color,
+    this.isActive, // Added to constructor
   });
 
   factory CategoryData.fromMap(Map<String, dynamic> map) {
@@ -160,6 +155,7 @@ class CategoryData {
       description: map['description'],
       icon: map['icon'],
       color: map['color'],
+      isActive: map['is_active'], // Assuming 'is_active' from API
     );
   }
 
@@ -170,6 +166,7 @@ class CategoryData {
       'description': description,
       'icon': icon,
       'color': color,
+      'is_active': isActive, // Added to toMap
     };
   }
 }
@@ -221,12 +218,11 @@ class CategoriesResponseModel {
     this.data,
   });
 
-  factory CategoriesResponseModel.fromJson(String jsonString) {
-    final Map<String, dynamic> json = jsonDecode(jsonString);
+  factory CategoriesResponseModel.fromJson(Map<String, dynamic> json) {
     return CategoriesResponseModel(
       success: json['success'] ?? false,
       message: json['message'] ?? '',
-      data: json['data'] != null 
+      data: json['data'] != null
           ? (json['data'] as List)
               .map((item) => CategoryData.fromMap(item))
               .toList()
@@ -246,12 +242,11 @@ class LocationsResponseModel {
     this.data,
   });
 
-  factory LocationsResponseModel.fromJson(String jsonString) {
-    final Map<String, dynamic> json = jsonDecode(jsonString);
+  factory LocationsResponseModel.fromJson(Map<String, dynamic> json) {
     return LocationsResponseModel(
       success: json['success'] ?? false,
       message: json['message'] ?? '',
-      data: json['data'] != null 
+      data: json['data'] != null
           ? (json['data'] as List)
               .map((item) => LocationData.fromMap(item))
               .toList()

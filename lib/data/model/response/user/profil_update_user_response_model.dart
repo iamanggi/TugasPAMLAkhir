@@ -45,7 +45,7 @@ class UserProfileData {
   final String? village;
   final String? subDistrict;
   final String role;
-  final File? photo;
+  final String? photo;
   final bool isActive;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -76,7 +76,7 @@ class UserProfileData {
         village: json["village"]?.toString(),
         subDistrict: json["sub_district"]?.toString(),
         role: json["role"] ?? '',
-        photo: json["photo"],
+        photo: json["photo"]?.toString(),
         isActive: json["is_active"] == 1 || json["is_active"] == true,
         createdAt: json["created_at"] != null ? DateTime.tryParse(json["created_at"]) : null,
         updatedAt: json["updated_at"] != null ? DateTime.tryParse(json["updated_at"]) : null,

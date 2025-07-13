@@ -29,12 +29,14 @@ class DashboardUserResponseModel {
 class Data {
   final User? user;
   final Stats? stats;
-  final List<dynamic>? pemeliharaan; // ✅ Ubah dari String? ke List<dynamic>?
+  final List<dynamic>? pemeliharaan; 
+  final String? photoUrl;
 
   Data({
     this.user,
     this.stats,
     this.pemeliharaan,
+    this.photoUrl,
   });
 
   factory Data.fromJson(String str) => Data.fromMap(json.decode(str));
@@ -47,12 +49,14 @@ class Data {
         pemeliharaan: json["pemeliharaan"] == null
             ? null
             : List<dynamic>.from(json["pemeliharaan"]),
+             photoUrl: json["photo_url"],
       );
 
   Map<String, dynamic> toMap() => {
         "user": user?.toMap(),
         "stats": stats?.toMap(),
         "pemeliharaan": pemeliharaan,
+        "photo_url": photoUrl,
       };
 }
 
