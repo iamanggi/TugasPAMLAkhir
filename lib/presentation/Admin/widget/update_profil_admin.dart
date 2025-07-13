@@ -26,7 +26,6 @@ class UpdateProfilAdminScreen extends StatelessWidget {
         ),
         backgroundColor: Colors.grey[50],
         body: Obx(() {
-          // Loading state saat mengambil profil
           if (controller.isLoadingProfile.value) {
             return const Center(
               child: Column(
@@ -39,8 +38,6 @@ class UpdateProfilAdminScreen extends StatelessWidget {
               ),
             );
           }
-
-          // Tampilan form
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Form(
@@ -48,7 +45,6 @@ class UpdateProfilAdminScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Foto profil
                   Center(
                     child: Stack(
                       children: [
@@ -63,11 +59,14 @@ class UpdateProfilAdminScreen extends StatelessWidget {
                           child: CircleAvatar(
                             radius: 50,
                             backgroundColor: Colors.grey[200],
-                            backgroundImage: controller.selectedImage != null
-                                ? FileImage(controller.selectedImage!)
-                                : controller.currentProfile?.photo != null
-                                    ? FileImage(controller.currentProfile!.photo!)
-                                    : null,
+                            backgroundImage:controller.selectedImage != null
+                                        ? FileImage(controller.selectedImage!)
+                                        : controller.currentProfile?.photo !=
+                                            null
+                                        ? NetworkImage(
+                                          'http://192.168.0.111:8888/storage/${controller.currentProfile!.photo}',
+                                        )
+                                        : null,
                             child: controller.selectedImage == null && 
                                    controller.currentProfile?.photo == null
                                 ? Icon(
@@ -108,8 +107,6 @@ class UpdateProfilAdminScreen extends StatelessWidget {
                   ),
 
                   const SpaceHeight(24),
-
-                  // Info card
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -135,8 +132,6 @@ class UpdateProfilAdminScreen extends StatelessWidget {
                   ),
 
                   const SpaceHeight(24),
-
-                  // Informasi Pribadi
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -244,8 +239,6 @@ class UpdateProfilAdminScreen extends StatelessWidget {
                   ),
 
                   const SpaceHeight(24),
-
-                  // Keamanan
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -354,8 +347,6 @@ class UpdateProfilAdminScreen extends StatelessWidget {
                   ),
 
                   const SpaceHeight(32),
-
-                  // Button simpan
                   Obx(() => SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
@@ -407,8 +398,6 @@ class UpdateProfilAdminScreen extends StatelessWidget {
                       )),
 
                   const SpaceHeight(16),
-
-                  // Info footer
                   Center(
                     child: Text(
                       'Data yang sudah disimpan tidak dapat dikembalikan',
