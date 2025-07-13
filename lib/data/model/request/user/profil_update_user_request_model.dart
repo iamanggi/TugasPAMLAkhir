@@ -10,7 +10,7 @@ class UserProfileUpdateRequestModel {
   final String? address;
   final String? village;
   final String? subDistrict;
-  final File? photo;
+  final File? photoFile;
 
   UserProfileUpdateRequestModel({
     this.nama,
@@ -20,7 +20,7 @@ class UserProfileUpdateRequestModel {
     this.address,
     this.village,
     this.subDistrict,
-    this.photo,
+    this.photoFile,
   });
 
   factory UserProfileUpdateRequestModel.fromJson(String str) => 
@@ -63,6 +63,7 @@ class UserProfileUpdateRequestModel {
     String? address,
     String? village,
     String? subDistrict,
+    File? photo,
   }) {
     return UserProfileUpdateRequestModel(
       nama: nama ?? this.nama,
@@ -72,6 +73,7 @@ class UserProfileUpdateRequestModel {
       address: address ?? this.address,
       village: village ?? this.village,
       subDistrict: subDistrict ?? this.subDistrict,
+      photoFile: photo ?? this.photoFile,
     );
   }
 }
