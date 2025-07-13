@@ -15,8 +15,6 @@ class CategoryPage extends StatefulWidget {
 class _CategoryPageState extends State<CategoryPage> with SingleTickerProviderStateMixin {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _iconController = TextEditingController();
-  final _colorController = TextEditingController(text: '#000000');
   bool _isActive = true;
   int? _editingId;
   TabController? _tabController;
@@ -37,21 +35,17 @@ class _CategoryPageState extends State<CategoryPage> with SingleTickerProviderSt
     _tabController?.dispose();
     _nameController.dispose();
     _descriptionController.dispose();
-    _iconController.dispose();
-    _colorController.dispose();
     super.dispose();
   }
 
   void _submitCategory() {
     final name = _nameController.text.trim();
     final description = _descriptionController.text.trim();
-    final icon = _iconController.text.trim();
-    final color = _colorController.text.trim();
 
-    if (name.isEmpty || icon.isEmpty || color.isEmpty) {
+    if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Nama, Icon, dan Warna wajib diisi!'),
+          content: const Text('Nama wajib diisi!'),
           backgroundColor: Colors.red[600],
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -62,10 +56,7 @@ class _CategoryPageState extends State<CategoryPage> with SingleTickerProviderSt
 
     final model = CategoryRequestModel(
       name: name,
-      slug: name.toLowerCase().replaceAll(' ', '-'),
       description: description,
-      icon: icon,
-      color: color,
       isActive: _isActive,
     );
 
@@ -74,25 +65,11 @@ class _CategoryPageState extends State<CategoryPage> with SingleTickerProviderSt
     } else {
       context.read<CategoriBloc>().add(UpdateCategory(id: _editingId!, model: model));
     }
-
-    _clearForm();
-    _tabController?.animateTo(1);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(_editingId == null ? 'Kategori berhasil ditambahkan!' : 'Kategori berhasil diperbarui!'),
-        backgroundColor: Colors.green[600],
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
   }
 
   void _clearForm() {
     _nameController.clear();
     _descriptionController.clear();
-    _iconController.clear();
-    _colorController.text = '#000000';
     _isActive = true;
     _editingId = null;
     setState(() {});
@@ -101,8 +78,6 @@ class _CategoryPageState extends State<CategoryPage> with SingleTickerProviderSt
   void _fillForm(CategoryDataModel category) {
     _nameController.text = category.name;
     _descriptionController.text = category.description ?? '';
-    _iconController.text = category.icon ?? '';
-    _colorController.text = category.color ?? '#000000';
     _isActive = category.isActive ?? true;
     _editingId = category.id;
     _tabController?.animateTo(0);
@@ -136,9 +111,12 @@ class _CategoryPageState extends State<CategoryPage> with SingleTickerProviderSt
               child: Row(
                 children: [
                   CircleAvatar(
-                    backgroundColor: _parseColor(category.color),
+                    backgroundColor: Colors.blue[600],
                     radius: 20,
-                    child: Text(category.icon ?? '📁', style: const TextStyle(fontSize: 16)),
+                    child: Text(
+                      category.name.isNotEmpty ? category.name[0].toUpperCase() : 'C',
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -164,14 +142,6 @@ class _CategoryPageState extends State<CategoryPage> with SingleTickerProviderSt
             onPressed: () {
               context.read<CategoriBloc>().add(DeleteCategory(category.id!));
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Kategori berhasil dihapus!'),
-                  backgroundColor: Colors.green[600],
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red[600],
@@ -182,19 +152,6 @@ class _CategoryPageState extends State<CategoryPage> with SingleTickerProviderSt
         ],
       ),
     );
-  }
-
-  Color _parseColor(String? hexColor) {
-    try {
-      if (hexColor == null || hexColor.isEmpty) return Colors.blue[600]!;
-      String cleanColor = hexColor.replaceAll('#', '');
-      if (cleanColor.length == 6) {
-        return Color(int.parse('0xFF$cleanColor'));
-      }
-      return Colors.blue[600]!;
-    } catch (e) {
-      return Colors.blue[600]!;
-    }
   }
 
   @override
@@ -224,16 +181,49 @@ class _CategoryPageState extends State<CategoryPage> with SingleTickerProviderSt
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildFormTab(),
-          _buildListTab(),
-        ],
+      body: BlocListener<CategoriBloc, CategoriState>(
+        listener: (context, state) {
+          if (state is CategorySuccess) {
+            // Clear form setelah berhasil
+            _clearForm();
+            
+            // Pindah ke tab daftar kategori
+            _tabController?.animateTo(1);
+            
+            // Tampilkan snackbar sukses
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.green[600],
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            );
+            
+            // Reload daftar kategori
+            context.read<CategoriBloc>().add(LoadCategories());
+          } else if (state is CategoryError) {
+            // Tampilkan snackbar error
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.error),
+                backgroundColor: Colors.red[600],
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            );
+          }
+        },
+        child: TabBarView(
+          controller: _tabController,
+          children: [
+            _buildFormTab(),
+            _buildListTab(),
+          ],
+        ),
       ),
     );
   }
-
 
   Widget _buildFormTab() {
     return SingleChildScrollView(
@@ -313,20 +303,6 @@ class _CategoryPageState extends State<CategoryPage> with SingleTickerProviderSt
                       hint: 'Masukkan deskripsi kategori (opsional)',
                       maxLines: 3,
                     ),
-                    const SizedBox(height: 20),
-                    _buildTextField(
-                      controller: _iconController,
-                      label: 'Icon',
-                      icon: Icons.emoji_symbols,
-                      hint: 'Contoh: 🏠, 🚗, 📱, 🍕',
-                    ),
-                    const SizedBox(height: 20),
-                    _buildTextField(
-                      controller: _colorController,
-                      label: 'Warna (Hex)',
-                      icon: Icons.color_lens,
-                      hint: 'Contoh: #FF5722, #4CAF50',
-                    ),
                     const SizedBox(height: 24),
                     Container(
                       decoration: BoxDecoration(
@@ -356,31 +332,46 @@ class _CategoryPageState extends State<CategoryPage> with SingleTickerProviderSt
                     Row(
                       children: [
                         Expanded(
-                          child: ElevatedButton(
-                            onPressed: _submitCategory,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue[600],
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 4,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(_editingId == null ? Icons.add : Icons.update),
-                                const SizedBox(width: 8),
-                                Text(
-                                  _editingId == null ? 'Tambah Kategori' : 'Update Kategori',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
+                          child: BlocBuilder<CategoriBloc, CategoriState>(
+                            builder: (context, state) {
+                              final isLoading = state is CategoryLoading;
+                              
+                              return ElevatedButton(
+                                onPressed: isLoading ? null : _submitCategory,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blue[600],
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
+                                  elevation: 4,
                                 ),
-                              ],
-                            ),
+                                child: isLoading
+                                    ? const SizedBox(
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(
+                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(_editingId == null ? Icons.add : Icons.update),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            _editingId == null ? 'Tambah Kategori' : 'Update Kategori',
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                              );
+                            },
                           ),
                         ),
                         if (_editingId != null) ...[
@@ -519,117 +510,126 @@ class _CategoryPageState extends State<CategoryPage> with SingleTickerProviderSt
               ),
             );
           }
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: state.categories.length,
-            itemBuilder: (context, index) {
-              final cat = state.categories[index];
-              return Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                child: Card(
-                  elevation: 4,
-                  shadowColor: Colors.black.withOpacity(0.1),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Container(
-                    decoration: BoxDecoration(
+          return RefreshIndicator(
+            onRefresh: () async {
+              context.read<CategoriBloc>().add(LoadCategories());
+            },
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: state.categories.length,
+              itemBuilder: (context, index) {
+                final cat = state.categories[index];
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: Card(
+                    elevation: 4,
+                    shadowColor: Colors.black.withOpacity(0.1),
+                    shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Colors.white, Colors.grey[50]!],
-                      ),
                     ),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.all(16),
-                      leading: Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          color: _parseColor(cat.color),
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: _parseColor(cat.color).withOpacity(0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Center(
-                          child: Text(
-                            cat.icon ?? '📁',
-                            style: const TextStyle(fontSize: 24),
-                          ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Colors.white, Colors.grey[50]!],
                         ),
                       ),
-                      title: Text(
-                        cat.name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 4),
-                          Text(
-                            cat.description ?? 'Tidak ada deskripsi',
-                            style: TextStyle(color: Colors.grey[600]),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.all(16),
+                        leading: Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            color: Colors.blue[600],
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.blue.withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: (cat.isActive ?? true) ? Colors.green[100] : Colors.red[100],
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                          child: Center(
                             child: Text(
-                              (cat.isActive ?? true) ? 'Aktif' : 'Non-aktif',
-                              style: TextStyle(
-                                color: (cat.isActive ?? true) ? Colors.green[700] : Colors.red[700],
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
+                              cat.name.isNotEmpty ? cat.name[0].toUpperCase() : 'C',
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
                               ),
                             ),
                           ),
-                        ],
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.orange[100],
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: IconButton(
-                              icon: Icon(Icons.edit, color: Colors.orange[700]),
-                              onPressed: () => _fillForm(cat),
-                              tooltip: 'Edit',
-                            ),
+                        ),
+                        title: Text(
+                          cat.name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
                           ),
-                          const SizedBox(width: 8),
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.red[100],
-                              borderRadius: BorderRadius.circular(8),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 4),
+                            Text(
+                              cat.description ?? 'Tidak ada deskripsi',
+                              style: TextStyle(color: Colors.grey[600]),
                             ),
-                            child: IconButton(
-                              icon: Icon(Icons.delete, color: Colors.red[700]),
-                              onPressed: () => _showDeleteConfirmation(cat),
-                              tooltip: 'Hapus',
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: (cat.isActive ?? true) ? Colors.green[100] : Colors.red[100],
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                (cat.isActive ?? true) ? 'Aktif' : 'Non-aktif',
+                                style: TextStyle(
+                                  color: (cat.isActive ?? true) ? Colors.green[700] : Colors.red[700],
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.orange[100],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: IconButton(
+                                icon: Icon(Icons.edit, color: Colors.orange[700]),
+                                onPressed: () => _fillForm(cat),
+                                tooltip: 'Edit',
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.red[100],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: IconButton(
+                                icon: Icon(Icons.delete, color: Colors.red[700]),
+                                onPressed: () => _showDeleteConfirmation(cat),
+                                tooltip: 'Hapus',
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           );
         } else if (state is CategoryError) {
           return Center(

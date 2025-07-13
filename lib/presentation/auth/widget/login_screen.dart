@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:tilik_desa/core/core.dart';
 import 'package:tilik_desa/core/navigations/admin_botom_navigation.dart';
+import 'package:tilik_desa/core/navigations/user_botom_navigation.dart';
 import 'package:tilik_desa/data/model/request/auth/login_request_model.dart';
 import 'package:tilik_desa/presentation/Admin/widget/dashbord_admin_screen.dart';
 import 'package:tilik_desa/presentation/User/widget/dashboard_user.dart';
@@ -54,11 +55,17 @@ class _LoginScreenState extends State<LoginScreen> {
               groupValue: Get.locale,
               children: {
                 const Locale('id', 'ID'): Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   child: Text('ID', style: TextStyle(color: Colors.white)),
                 ),
                 const Locale('en', 'US'): Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   child: Text('EN', style: TextStyle(color: Colors.white)),
                 ),
               },
@@ -148,9 +155,15 @@ class _LoginScreenState extends State<LoginScreen> {
                 BlocConsumer<LoginBloc, LoginState>(
                   listener: (context, state) {
                     if (state is LoginSuccess) {
-                      final role = state.responseModel.data?.user?.role?.toLowerCase();
+                      final role =
+                          state.responseModel.data?.user?.role?.toLowerCase();
                       if (role == 'masyarakat') {
-                        context.pushReplacement(const DashboardUserScreen());
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(
+                            builder: (_) => const UserBottomNavigation(),
+                          ),
+                          (route) => false,
+                        );
                       } else if (role == 'admin') {
                         context.pushReplacement(const AdminBottomNavigation());
                       } else {
@@ -162,19 +175,20 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                   builder: (context, state) {
                     return Button.filled(
-                      onPressed: state is LoginLoading
-                          ? null
-                          : () {
-                              if (_key.currentState!.validate()) {
-                                final request = LoginRequestModel(
-                                  email: emailController.text,
-                                  password: passwordController.text,
-                                );
-                                context.read<LoginBloc>().add(
-                                      LoginRequested(requestModel: request),
-                                    );
-                              }
-                            },
+                      onPressed:
+                          state is LoginLoading
+                              ? null
+                              : () {
+                                if (_key.currentState!.validate()) {
+                                  final request = LoginRequestModel(
+                                    email: emailController.text,
+                                    password: passwordController.text,
+                                  );
+                                  context.read<LoginBloc>().add(
+                                    LoginRequested(requestModel: request),
+                                  );
+                                }
+                              },
                       label: state is LoginLoading ? 'loading'.tr : 'login'.tr,
                     );
                   },
@@ -194,10 +208,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         TextSpan(
                           text: 'register_here'.tr,
                           style: TextStyle(color: AppColors.primary),
-                          recognizer: TapGestureRecognizer()
-                            ..onTap = () {
-                              context.push(const RegisterScreen());
-                            },
+                          recognizer:
+                              TapGestureRecognizer()
+                                ..onTap = () {
+                                  context.push(const RegisterScreen());
+                                },
                         ),
                       ],
                     ),
