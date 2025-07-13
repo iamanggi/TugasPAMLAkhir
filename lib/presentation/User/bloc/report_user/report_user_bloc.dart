@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tilik_desa/data/model/request/user/add_report_user_request_model.dart';
 import 'package:tilik_desa/data/model/response/user/add_report_user_response_model.dart';
-import 'package:tilik_desa/data/repository/User/report_user_repository.dart';
+import 'package:tilik_desa/data/repository/User/add_report_user_repository.dart';
 
 part 'report_user_event.dart';
 part 'report_user_state.dart';
