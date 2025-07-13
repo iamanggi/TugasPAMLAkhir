@@ -1,6 +1,4 @@
 import 'dart:convert';
-
-// Request model untuk dashboard - biasanya berisi parameter query
 class DashboardUserRequestModel {
   final String? userId;
   final int? page;
@@ -25,7 +23,7 @@ class DashboardUserRequestModel {
 
   factory DashboardUserRequestModel.fromMap(Map<String, dynamic> json) =>
       DashboardUserRequestModel(
-        userId: json["user_id"],
+        userId: json["id_user"],
         page: json["page"],
         limit: json["limit"],
         dateFrom: json["date_from"],
@@ -36,7 +34,7 @@ class DashboardUserRequestModel {
       );
 
   Map<String, dynamic> toMap() => {
-        "user_id": userId,
+        "id_user": userId,
         "page": page,
         "limit": limit,
         "date_from": dateFrom,
@@ -44,8 +42,6 @@ class DashboardUserRequestModel {
         "filters": filters,
       };
 }
-
-// Response model untuk dashboard - berisi data yang diterima
 class DashboardUserResponseModel {
   final bool? success;
   final String? message;
