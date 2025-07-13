@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tilik_desa/core/navigations/user_botom_navigation.dart';
 import 'package:tilik_desa/presentation/User/bloc/dashboard_user/dashboard_user_bloc.dart';
 import 'package:tilik_desa/presentation/User/widget/update_profile_user.dart';
 import 'package:tilik_desa/presentation/auth/widget/login_screen.dart';
@@ -28,36 +27,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final prefs = await SharedPreferences.getInstance();
     final value = prefs.getBool('bahasa') ?? true;
     setState(() => isBahasaIndonesia = value);
-    Get.updateLocale(value ? const Locale('id', 'ID') : const Locale('en', 'US'));
+    Get.updateLocale(
+      value ? const Locale('id', 'ID') : const Locale('en', 'US'),
+    );
   }
 
   Future<void> _toggleBahasa(bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('bahasa', value);
     setState(() => isBahasaIndonesia = value);
-    Get.updateLocale(value ? const Locale('id', 'ID') : const Locale('en', 'US'));
+    Get.updateLocale(
+      value ? const Locale('id', 'ID') : const Locale('en', 'US'),
+    );
   }
 
   Future<void> _logout() async {
-  final confirmed = await Get.defaultDialog<bool>(
-    title: 'logout'.tr,
-    middleText: 'logout_confirmation'.tr,
-    textCancel: 'cancel'.tr,
-    textConfirm: 'logout'.tr,
-    confirmTextColor: Colors.white,
-    onConfirm: () => Get.back(result: true),
-    onCancel: () => Get.back(result: false),
-  );
+    final confirmed = await Get.defaultDialog<bool>(
+      title: 'logout'.tr,
+      middleText: 'logout_confirmation'.tr,
+      textCancel: 'cancel'.tr,
+      textConfirm: 'logout'.tr,
+      confirmTextColor: Colors.white,
+      onConfirm: () => Get.back(result: true),
+      onCancel: () => Get.back(result: false),
+    );
 
-  if (confirmed == true) {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
-
-    await Future.delayed(const Duration(milliseconds: 300));
-    Get.offAll(() => const LoginScreen());
+    if (confirmed == true) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+      await Future.delayed(const Duration(milliseconds: 300));
+      Get.offAll(() => const LoginScreen());
+    }
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -73,16 +74,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: BlocBuilder<DashboardUserBloc, DashboardUserState>(
         builder: (context, state) {
           dynamic userData;
+          String? photoUrl;
           bool isLoading = true;
 
           if (state is DashboardUserLoaded) {
             userData = state.dashboard.data?.user;
+            final photoPath = state.dashboard.data?.user?.photo;
+            if (photoPath != null && photoPath.isNotEmpty) {
+              photoUrl = 'http://192.168.0.111:8888/storage/$photoPath';
+            }
+
             isLoading = false;
           }
 
           final displayName = userData?.nama ?? 'user'.tr;
           final initials = _getInitials(displayName);
-          final photoUrl = userData?.photo;
 
           return RefreshIndicator(
             onRefresh: () async {
@@ -101,31 +107,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
           );
         },
       ),
-      bottomNavigationBar: UserBottomNavBar(
-        currentIndex: 4,
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              Get.offAllNamed('/dashboard');
-              break;
-            case 1:
-              Get.toNamed('/camera');
-              break;
-            case 2:
-              Get.toNamed('/my-reports');
-              break;
-            case 3:
-              Get.toNamed('/map');
-              break;
-            case 4:
-              break;
-          }
-        },
-      ),
     );
   }
 
-  Widget _buildProfileCard(String displayName, String initials, String? photoUrl, bool isLoading) {
+  Widget _buildProfileCard(
+    String displayName,
+    String initials,
+    String? photoUrl,
+    bool isLoading,
+  ) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
@@ -138,35 +128,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
         leading: CircleAvatar(
           radius: 30,
           backgroundColor: Colors.blue.shade100,
-          child: isLoading
-              ? const CircularProgressIndicator(strokeWidth: 2)
-              : (photoUrl != null && photoUrl.isNotEmpty)
+          child:
+              isLoading
+                  ? const CircularProgressIndicator(strokeWidth: 2)
+                  : (photoUrl != null && photoUrl.isNotEmpty)
                   ? ClipOval(
-                      child: Image.network(
-                        photoUrl,
-                        width: 60,
-                        height: 60,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Center(
-                          child: Text(
-                            initials,
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue.shade700,
+                    child: Image.network(
+                      photoUrl,
+                      width: 60,
+                      height: 60,
+                      fit: BoxFit.cover,
+                      errorBuilder:
+                          (_, __, ___) => Center(
+                            child: Text(
+                              initials,
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue.shade700,
+                              ),
                             ),
                           ),
-                        ),
-                      ),
-                    )
-                  : Text(
-                      initials,
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue.shade700,
-                      ),
                     ),
+                  )
+                  : Text(
+                    initials,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue.shade700,
+                    ),
+                  ),
         ),
         title: Text(
           displayName,
@@ -197,7 +189,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Icon(Icons.language, color: Colors.green.shade700),
         ),
         title: Text('language'.tr),
-        subtitle: Text(isBahasaIndonesia ? 'bahasa_indonesia'.tr : 'english'.tr),
+        subtitle: Text(
+          isBahasaIndonesia ? 'bahasa_indonesia'.tr : 'english'.tr,
+        ),
         trailing: Switch(
           value: isBahasaIndonesia,
           onChanged: _toggleBahasa,
