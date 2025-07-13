@@ -24,3 +24,15 @@ class UpdateProfilAdminFailure extends UpdateProfilAdminDartState {
 
   UpdateProfilAdminFailure(this.message);
 }
+
+final class ProfilAdminGetError extends UpdateProfilAdminDartState {
+  final String message;
+
+  ProfilAdminGetError({required this.message});
+}
+
+final class UpdateProfilAdminError extends UpdateProfilAdminDartState {
+  final String message;
+
+  UpdateProfilAdminError({required this.message});
+}

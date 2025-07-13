@@ -5,8 +5,10 @@ sealed class UpdateProfilAdminDartEvent {}
 
 class LoadProfilAdminEvent extends UpdateProfilAdminDartEvent {}
 
-class UpdateProfilAdminEvent extends UpdateProfilAdminDartEvent {
+final class UpdateProfilAdminEvent extends UpdateProfilAdminDartEvent {
   final AdminProfileUpdateRequestModel request;
 
-  UpdateProfilAdminEvent(this.request);
+  UpdateProfilAdminEvent({required this.request});
 }
+
+final class ResetUpdateProfilAdminState extends UpdateProfilAdminDartEvent {}
