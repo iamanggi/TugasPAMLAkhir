@@ -3,10 +3,8 @@ import 'dart:convert';
 class ReportStoreRequestModel {
   final String title;
   final String description;
-  final String? photoPath;
+  final String? photoPath; 
   final int categoryId;
-  final String? village;
-  final String? district;
   final String? fullAddress;
   final double? latitude;
   final double? longitude;
@@ -18,8 +16,6 @@ class ReportStoreRequestModel {
     required this.description,
     this.photoPath,
     required this.categoryId,
-    this.village,
-    this.district,
     this.fullAddress,
     this.latitude,
     this.longitude,
@@ -32,9 +28,7 @@ class ReportStoreRequestModel {
       'title': title,
       'description': description,
       'category_id': categoryId,
-      'village': village,
-      'district': district,
-      'full_address': fullAddress,
+      'address': fullAddress,
       'latitude': latitude,
       'longitude': longitude,
       'location_detail': locationDetail,
@@ -49,6 +43,7 @@ class CategoryModel {
   final String? description;
   final String? icon;
   final String? color;
+  final bool? isActive; 
 
   CategoryModel({
     required this.id,
@@ -56,6 +51,7 @@ class CategoryModel {
     this.description,
     this.icon,
     this.color,
+    this.isActive, 
   });
 
   factory CategoryModel.fromMap(Map<String, dynamic> map) {
@@ -65,6 +61,7 @@ class CategoryModel {
       description: map['description'],
       icon: map['icon'],
       color: map['color'],
+      isActive: map['is_active'], 
     );
   }
 
@@ -75,6 +72,7 @@ class CategoryModel {
       'description': description,
       'icon': icon,
       'color': color,
+      'is_active': isActive, 
     };
   }
 }
