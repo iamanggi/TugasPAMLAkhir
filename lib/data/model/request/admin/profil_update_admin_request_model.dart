@@ -13,8 +13,7 @@ class AdminProfileUpdateRequestModel {
   final String? subDistrict;
   final String? role;
   final bool? isActive;
-  final File? photo;
-
+  final File? photoFile;
 
   AdminProfileUpdateRequestModel({
     this.nama,
@@ -28,15 +27,15 @@ class AdminProfileUpdateRequestModel {
     this.subDistrict,
     this.role,
     this.isActive,
-    this.photo,
+    this.photoFile,
   });
 
-  factory AdminProfileUpdateRequestModel.fromJson(String str) => 
+  factory AdminProfileUpdateRequestModel.fromJson(String str) =>
       AdminProfileUpdateRequestModel.fromMap(json.decode(str));
 
   String toJson() => json.encode(toMap());
 
-  factory AdminProfileUpdateRequestModel.fromMap(Map<String, dynamic> json) => 
+  factory AdminProfileUpdateRequestModel.fromMap(Map<String, dynamic> json) =>
       AdminProfileUpdateRequestModel(
         nama: json["nama"],
         email: json["email"],
@@ -53,7 +52,7 @@ class AdminProfileUpdateRequestModel {
 
   Map<String, dynamic> toMap() {
     Map<String, dynamic> data = {};
-    
+
     if (nama != null && nama!.isNotEmpty) data["nama"] = nama;
     if (email != null && email!.isNotEmpty) data["email"] = email;
     if (username != null && username!.isNotEmpty) data["username"] = username;
@@ -64,10 +63,11 @@ class AdminProfileUpdateRequestModel {
     if (phone != null && phone!.isNotEmpty) data["phone"] = phone;
     if (address != null && address!.isNotEmpty) data["address"] = address;
     if (village != null && village!.isNotEmpty) data["village"] = village;
-    if (subDistrict != null && subDistrict!.isNotEmpty) data["sub_district"] = subDistrict;
+    if (subDistrict != null && subDistrict!.isNotEmpty)
+      data["sub_district"] = subDistrict;
     if (role != null && role!.isNotEmpty) data["role"] = role;
     if (isActive != null) data["is_active"] = isActive;
-    
+
     return data;
   }
 
@@ -83,6 +83,7 @@ class AdminProfileUpdateRequestModel {
     String? subDistrict,
     String? role,
     bool? isActive,
+    File? photo,
   }) {
     return AdminProfileUpdateRequestModel(
       nama: nama ?? this.nama,
@@ -96,6 +97,7 @@ class AdminProfileUpdateRequestModel {
       subDistrict: subDistrict ?? this.subDistrict,
       role: role ?? this.role,
       isActive: isActive ?? this.isActive,
+      photoFile: photo ?? this.photoFile,
     );
   }
 }
