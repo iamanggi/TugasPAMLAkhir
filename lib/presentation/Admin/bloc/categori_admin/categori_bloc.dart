@@ -1,7 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:tilik_desa/data/model/request/admin/categori_admin_request_model.dart';
 import 'package:tilik_desa/data/model/response/admin/categori_admin_response_model.dart';
-import 'package:tilik_desa/data/repository/Admin/categori_admin_respositori.dart';
+import 'package:tilik_desa/data/repository/Admin/categori_admin_respository.dart';
 
 part 'categori_event.dart';
 part 'categori_state.dart';
@@ -45,5 +45,7 @@ class CategoriBloc extends Bloc<CategoriEvent, CategoriState> {
         (success) => emit(CategorySuccess("Kategori berhasil dihapus")),
       );
     });
+
+    
   }
 }
