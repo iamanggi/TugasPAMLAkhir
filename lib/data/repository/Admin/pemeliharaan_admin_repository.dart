@@ -79,7 +79,7 @@ class PemeliharaanRepository {
   // Get Form Data untuk Create
   Future<Either<String, PemeliharaanFormResponseModel>> getCreateFormData() async {
     try {
-      final response = await _serviceHttpClient.get("admin/pemeliharaan/create");
+      final response = await _serviceHttpClient.get("admin/pemeliharaan");
 
       if (response.body == null || response.body.isEmpty) {
         return const Left("Data tidak ditemukan");

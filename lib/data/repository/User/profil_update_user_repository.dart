@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:developer';
-
+import 'dart:io';
 import 'package:dartz/dartz.dart';
 import 'package:http/http.dart' as http;
 import 'package:tilik_desa/data/model/request/user/profil_update_user_request_model.dart';
@@ -15,12 +15,12 @@ class UserProfileRepository {
   /// Ambil profil user sendiri
   Future<Either<String, UserProfileUpdateResponseModel>> getMyProfile() async {
     try {
-      // Endpoint: GET /profile (sesuai dengan backend)
       final response = await _serviceHttpClient.get("profile");
 
       return _handleResponse(
         response: response,
-        onSuccess: (jsonResponse) => UserProfileUpdateResponseModel.fromMap(jsonResponse),
+        onSuccess: (jsonResponse) =>
+            UserProfileUpdateResponseModel.fromMap(jsonResponse),
         errorContext: "mengambil data profil user",
       );
     } catch (e) {
@@ -29,40 +29,51 @@ class UserProfileRepository {
     }
   }
 
-  /// Ambil profil user (alias untuk getMyProfile untuk backward compatibility)
   Future<Either<String, UserProfileUpdateResponseModel>> getProfile() async {
     return getMyProfile();
   }
 
-  /// Update profil user (alias untuk updateMyProfile untuk backward compatibility)
+  /// Update profil user sendiri
+  Future<Either<String, UserProfileUpdateResponseModel>> updateMyProfile(
+  UserProfileUpdateRequestModel request,
+) async {
+  try {
+    http.Response response;
+
+    // Cek apakah ada file foto
+    if (request.photoFile != null) {
+      response = await _serviceHttpClient.postMultipartWithToken(
+        "profile",
+        fields: request.toMap(), // semua data string (nama, alamat, dll)
+       photoFile: request.photoFile, // File? dari ImagePicker
+      );
+    } else {
+      response = await _serviceHttpClient.postWithToken(
+        "profile",
+        request.toMap(),
+      );
+    }
+
+    return _handleResponse(
+      response: response,
+      onSuccess: (jsonResponse) =>
+          UserProfileUpdateResponseModel.fromMap(jsonResponse),
+      errorContext: "memperbarui profil user",
+    );
+  } catch (e) {
+    log("Error updateMyProfile: $e");
+    return const Left("Terjadi kesalahan saat memperbarui profil user");
+  }
+}
+
+
   Future<Either<String, UserProfileUpdateResponseModel>> updateProfile(
     UserProfileUpdateRequestModel request,
   ) async {
     return updateMyProfile(request);
   }
 
-  /// Update profil user sendiri
-  Future<Either<String, UserProfileUpdateResponseModel>> updateMyProfile(
-    UserProfileUpdateRequestModel request,
-  ) async {
-    try {
-      // PERBAIKAN: Ganti dari postWithToken ke putWithToken
-      final response = await _serviceHttpClient.putWithToken(
-        "profile",
-        request.toMap(),
-      );
-
-      return _handleResponse(
-        response: response,
-        onSuccess: (jsonResponse) => UserProfileUpdateResponseModel.fromMap(jsonResponse),
-        errorContext: "memperbarui profil user",
-      );
-    } catch (e) {
-      log("Error updateMyProfile: $e");
-      return const Left("Terjadi kesalahan saat memperbarui profil user");
-    }
-  }
-
+  /// Ubah password
   Future<Either<String, UserProfileUpdateResponseModel>> changePassword({
     required String currentPassword,
     required String newPassword,
@@ -75,16 +86,13 @@ class UserProfileRepository {
         'password_confirmation': passwordConfirmation,
       };
 
-      // CATATAN: Cek apakah endpoint change-password juga perlu PUT atau tetap POST
-      // Jika error yang sama terjadi, ganti ke putWithToken
-      final response = await _serviceHttpClient.postWithToken(
-        "change-password",
-        requestData,
-      );
+      final response =
+          await _serviceHttpClient.postWithToken("change-password", requestData);
 
       return _handleResponse(
         response: response,
-        onSuccess: (jsonResponse) => UserProfileUpdateResponseModel.fromMap(jsonResponse),
+        onSuccess: (jsonResponse) =>
+            UserProfileUpdateResponseModel.fromMap(jsonResponse),
         errorContext: "mengubah password",
       );
     } catch (e) {
@@ -93,47 +101,43 @@ class UserProfileRepository {
     }
   }
 
-  /// Handler response umum dengan logging yang lebih detail
+  /// Handle response standar
   Either<String, T> _handleResponse<T>({
     required http.Response response,
     required T Function(Map<String, dynamic>) onSuccess,
     required String errorContext,
   }) {
     try {
-      // Log request URL untuk debugging
       log("[$errorContext] Request URL: ${response.request?.url}");
       log("[$errorContext] Status: ${response.statusCode}");
       log("[$errorContext] Body: ${response.body}");
-      
+
       final jsonResponse = json.decode(response.body) as Map<String, dynamic>;
-      
+
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return Right(onSuccess(jsonResponse));
       } else {
-        // Handle error response dengan lebih detail
         String errorMessage = "Terjadi kesalahan saat $errorContext";
-        
-        // Ambil pesan error dari response
+
         if (jsonResponse.containsKey('message')) {
           errorMessage = jsonResponse['message'] as String;
         }
-        
-        // Handle specific status codes
+
         switch (response.statusCode) {
           case 400:
-            errorMessage = jsonResponse['message'] ?? 'Data yang dikirim tidak valid';
+            errorMessage = jsonResponse['message'] ?? 'Data tidak valid';
             break;
           case 401:
             errorMessage = "Sesi Anda telah berakhir. Silakan login kembali";
             break;
           case 403:
-            errorMessage = "Anda tidak memiliki izin untuk melakukan aksi ini";
+            errorMessage = "Anda tidak memiliki izin";
             break;
           case 404:
-            errorMessage = "Endpoint tidak ditemukan. Pastikan backend berjalan dan route sudah terdaftar";
+            errorMessage = "Endpoint tidak ditemukan";
             break;
           case 405:
-            errorMessage = "Method tidak diizinkan untuk endpoint ini";
+            errorMessage = "Method tidak diizinkan";
             break;
           case 422:
             if (jsonResponse.containsKey('errors')) {
@@ -144,29 +148,21 @@ class UserProfileRepository {
                   errorMessage = firstError.first.toString();
                 }
               }
-            } else if (jsonResponse.containsKey('message')) {
-              errorMessage = jsonResponse['message'] as String;
             }
             break;
           case 500:
-            errorMessage = "Terjadi kesalahan pada server. Coba lagi nanti";
+            errorMessage = "Terjadi kesalahan server";
             break;
-          default:
-            if (jsonResponse.containsKey('message')) {
-              errorMessage = jsonResponse['message'] as String;
-            }
         }
-        
+
         return Left(errorMessage);
       }
     } catch (e) {
       log("Error parsing response for $errorContext: $e");
-      log("Raw response body: ${response.body}");
-      return Left("Terjadi kesalahan saat memproses respons dari server");
+      return Left("Gagal memproses respons server");
     }
   }
 
-  /// Method tambahan untuk debugging - cek apakah token valid
   Future<bool> checkTokenValidity() async {
     try {
       final response = await _serviceHttpClient.get("profile");

@@ -1,5 +1,8 @@
+// lib/data/repository/admin_profile_repository.dart
+
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:dartz/dartz.dart';
 import 'package:http/http.dart' as http;
@@ -12,10 +15,8 @@ class AdminProfileRepository {
 
   AdminProfileRepository(this._client);
 
-  /// Ambil profil admin sendiri
   Future<Either<String, AdminProfileUpdateResponseModel>> getMyProfile() async {
     try {
-      // Endpoint: GET /profile (sesuai dengan backend)
       final response = await _client.get("profile");
 
       return _handleResponse(
@@ -29,16 +30,24 @@ class AdminProfileRepository {
     }
   }
 
-  /// Update profil admin sendiri
   Future<Either<String, AdminProfileUpdateResponseModel>> updateMyProfile(
-      AdminProfileUpdateRequestModel request) async {
+    AdminProfileUpdateRequestModel request,
+  ) async {
     try {
-      // PERBAIKAN: Gunakan endpoint "profile" bukan "admin/profile"
-      // Karena backend endpoint adalah /profile
-      final response = await _client.putWithToken(
-        "profile", // Ubah dari "admin/profile" ke "profile"
-        request.toMap(),
-      );
+      http.Response response;
+
+      if (request.photoFile != null) {
+        response = await _client.postMultipartWithToken(
+          "profile",
+          fields: request.toMap(),
+          photoFile: request.photoFile,
+        );
+      } else {
+        response = await _client.postWithToken(
+          "profile",
+          request.toMap(),
+        );
+      }
 
       return _handleResponse(
         response: response,
@@ -51,17 +60,25 @@ class AdminProfileRepository {
     }
   }
 
-  /// Handler response umum dengan logging yang lebih detail
+  Future<bool> checkTokenValidity() async {
+    try {
+      final response = await _client.get("profile");
+      return response.statusCode != 401;
+    } catch (e) {
+      log("Error checking token validity: $e");
+      return false;
+    }
+  }
+
   Either<String, T> _handleResponse<T>({
     required http.Response response,
     required T Function(Map<String, dynamic>) onSuccess,
     required String errorContext,
   }) {
     try {
-      // Log request URL untuk debugging
-      log("[$errorContext] Request URL: ${response.request?.url}");
-      log("[$errorContext] Status: ${response.statusCode}");
-      log("[$errorContext] Body: ${response.body}");
+      log("[$errorContext] Request URL: \${response.request?.url}");
+      log("[$errorContext] Status: \${response.statusCode}");
+      log("[$errorContext] Body: \${response.body}");
 
       final jsonResponse = json.decode(response.body) as Map<String, dynamic>;
 
@@ -69,10 +86,8 @@ class AdminProfileRepository {
         return Right(onSuccess(jsonResponse));
       }
 
-      // Ambil pesan error dari response
       String errorMessage = jsonResponse['message'] ?? 'Terjadi kesalahan saat $errorContext';
 
-      // Tangani error validasi
       if (response.statusCode == 422 && jsonResponse.containsKey('errors')) {
         final errors = jsonResponse['errors'];
         if (errors is Map && errors.isNotEmpty) {
@@ -83,7 +98,6 @@ class AdminProfileRepository {
         }
       }
 
-      // Tangani error khusus
       switch (response.statusCode) {
         case 401:
           errorMessage = "Token tidak valid atau sudah expired";
@@ -94,6 +108,9 @@ class AdminProfileRepository {
         case 404:
           errorMessage = "Endpoint tidak ditemukan. Pastikan backend berjalan dan route sudah terdaftar";
           break;
+        case 405:
+          errorMessage = "Method tidak diizinkan";
+          break;
         case 500:
           errorMessage = "Terjadi kesalahan pada server";
           break;
@@ -102,19 +119,8 @@ class AdminProfileRepository {
       return Left(errorMessage);
     } catch (e) {
       log("Error parsing response ($errorContext): $e");
-      log("Raw response body: ${response.body}");
+      log("Raw response body: \${response.body}");
       return Left("Terjadi kesalahan saat memproses respons dari server");
-    }
-  }
-
-  /// Method tambahan untuk debugging - cek apakah token valid
-  Future<bool> checkTokenValidity() async {
-    try {
-      final response = await _client.get("profile");
-      return response.statusCode != 401;
-    } catch (e) {
-      log("Error checking token validity: $e");
-      return false;
     }
   }
 }
